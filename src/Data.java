@@ -6,14 +6,14 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Test {
+public abstract class Data {
 
 	/**
 	 * 存储播放列表的数据结构
 	 * 
 	 * @author jzj
 	 */
-	static class PlayList {
+	private static class PlayList {
 		int id;
 		String name;
 
@@ -23,14 +23,8 @@ public class Test {
 		}
 	}
 
-	// 数据库完整路径
-	static final String db_path = "G:\\IOS\\cloud.db";
-	// 源文件夹
-	static final String src_dir = "G:\\IOS\\Music\\";
-	// 目标文件夹
-	static final String dst_dir = "G:\\IOS\\Music1\\";
-
-	public static void main(String[] args) throws Exception {
+	public void run(String db_path, String src_dir, String dst_dir)
+			throws Exception {
 
 		Class.forName("org.sqlite.JDBC");
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + db_path);
@@ -39,7 +33,7 @@ public class Test {
 		Statement stat2 = conn.createStatement();
 
 		// 读取播放列表
-		List<PlayList> lists = new ArrayList<Test.PlayList>();
+		List<PlayList> lists = new ArrayList<Data.PlayList>();
 		ResultSet rs_list = stat1.executeQuery("select * from playlistsInfo;");
 		while (rs_list.next()) {
 			final int id = rs_list.getInt("id");
@@ -66,9 +60,9 @@ public class Test {
 			if (fname == null || fname.length() == 0) // 如果file字段为空则跳过
 				continue;
 
-			String src_path = src_dir + fname;
+			String src_file = src_dir + '\\' + fname;
 
-			File src = new File(src_path);
+			File src = new File(src_file);
 			if (!src.exists()) // 如果源文件不存在则跳过
 				continue;
 
@@ -88,7 +82,7 @@ public class Test {
 			rs_pl.close();
 
 			// 目标文件夹路径
-			StringBuilder b2 = new StringBuilder(dst_dir);
+			StringBuilder b2 = new StringBuilder(dst_dir).append('\\');
 			if (playlist_id >= 0) {
 				String playlist_name = getPlaylist(lists, playlist_id);
 				if (playlist_name != null) {
@@ -110,18 +104,23 @@ public class Test {
 			src.renameTo(dst);
 
 			// 输出信息
-			System.out.println(new StringBuilder(src_path).append(" ---> ")
-					.append(dst_path));
+			this.output(new StringBuilder(src_file).append(" ---> ")
+					.append(dst_path).toString());
 		}
 		rs_res.close();
 		conn.close();
+		this.finish();
 	}
 
-	static String getPlaylist(List<PlayList> lists, int playlist_id) {
+	private static String getPlaylist(List<PlayList> lists, int playlist_id) {
 		for (PlayList pl : lists) {
 			if (pl.id == playlist_id)
 				return pl.name;
 		}
 		return null;
 	}
+
+	public abstract void output(String s);
+
+	public abstract void finish();
 }
